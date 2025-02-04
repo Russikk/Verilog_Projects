@@ -1,0 +1,99 @@
+module Elevator(
+    input wire clk,                     
+    input wire rst,                     
+    input wire [2:0] target_floor,      
+    input wire [2:0] current_floor,     
+    output reg [2:0] state,             
+    output reg [1:0] direction,         
+    output reg door_open                
+);
+
+    
+    parameter FLOOR_1 = 3'b001;
+    parameter FLOOR_2 = 3'b010;
+    parameter FLOOR_3 = 3'b011;
+    parameter FLOOR_4 = 3'b100;
+    parameter FLOOR_5 = 3'b101;
+
+    
+    parameter IDLE = 2'b00;
+    parameter UP = 2'b01;
+    parameter DOWN = 2'b10;
+    parameter WAIT = 2'b11;  
+
+    reg [2:0] next_state;
+    reg [1:0] next_direction;
+
+    
+    always @(posedge clk or negedge rst) begin
+        if (~rst) begin
+            state <= current_floor;
+            direction <= IDLE; // ?? ?????????
+            door_open <= 0; // ????? ???????
+        end else begin
+            state <= next_state;
+            direction <= next_direction;
+        end
+    end
+
+    
+    always @(*) begin
+        next_state = state; 
+        next_direction = IDLE;
+        door_open = 0;
+
+        case (direction)
+            IDLE: begin
+                if (target_floor != state) begin
+                    if (target_floor > state) begin
+                        next_state = state + 1;
+                        next_direction = UP; // ?????
+                    end else if (target_floor < state) begin
+                        next_state = state - 1;
+                        next_direction = DOWN; // ????
+                    end
+                end else begin
+                    door_open = 1;
+                    next_direction = WAIT; 
+                end
+            end
+
+            UP: begin
+                if (state < target_floor) begin
+                    next_state = state + 1;
+                    next_direction = UP; 
+                end else begin
+                    door_open = 1;
+                    next_direction = WAIT; 
+                end
+            end
+
+            DOWN: begin
+                if (state > target_floor) begin
+                    next_state = state - 1;
+                    next_direction = DOWN; 
+                end else begin
+                    door_open = 1;
+                    next_direction = WAIT; 
+                end
+            end
+
+            WAIT: begin
+                if (target_floor != state) begin
+                    door_open = 0;
+                    if (target_floor > state) begin
+                        next_state = state + 1;
+                        next_direction = UP; 
+                    end else if (target_floor < state) begin
+                        next_state = state - 1;
+                        next_direction = DOWN; 
+                    end
+                end else begin
+                    door_open = 1;
+                    next_direction = WAIT; 
+                end
+            end
+        endcase
+    end
+endmodule
+
