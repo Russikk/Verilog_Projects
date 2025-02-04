@@ -1,0 +1,98 @@
+module traffic_light(
+    input clk,
+    input reset,
+    input enable, // New enable signal
+    input [5:0] RED_TIME,
+    input [5:0] GREEN_TIME,
+    input [5:0] GREEN_BLINK_TIME,
+    input [5:0] YELLOW_TIME,
+    output reg red,
+    output reg green,
+    output reg yellow,
+    output reg pedestrian_red,
+    output reg pedestrian_green
+);
+
+parameter RED = 3'b000;
+parameter GREEN = 3'b001;
+parameter GREEN_BLINK = 3'b010;
+parameter YELLOW_after_GREEN = 3'b011;
+parameter YELLOW_after_red = 3'b100;
+
+reg [2:0] state;
+reg [5:0] counter;
+reg [4:0] ped_counter;
+
+always @(posedge clk or negedge reset) begin
+    if (~reset) begin
+        state <= RED;
+        counter <= 0;
+        ped_counter <= 0;
+    end else if (enable) begin // Enable signal controls whether the module operates
+        case (state)
+            RED: begin
+                red <= 1;
+                green <= 0;
+                yellow <= 0;
+                pedestrian_red <= 0;
+                pedestrian_green <= 1;
+                counter <= counter + 1;
+                if (counter >= RED_TIME) begin
+                    state <= YELLOW_after_red;
+                    counter <= 0;
+                end
+            end
+            YELLOW_after_red: begin
+                red <= 1;
+                green <= 0;
+                yellow <= 1;
+                pedestrian_red <= 1;
+                pedestrian_green <= 0;
+                counter <= counter + 1;
+                if (counter >= YELLOW_TIME) begin
+                    state <= GREEN;
+                    counter <= 0;
+                end
+            end
+            GREEN: begin
+                red <= 0;
+                green <= 1;
+                yellow <= 0;
+                pedestrian_red <= 1;
+                pedestrian_green <= 0;
+                counter <= counter + 1;
+                if (counter >= GREEN_TIME) begin
+                    state <= GREEN_BLINK;
+                    counter <= 0;
+                end
+            end
+            GREEN_BLINK: begin
+                red <= 0;
+                green <= ~green;
+                yellow <= 0;
+                pedestrian_red <= 1;
+                pedestrian_green <= 0;
+                counter <= counter + 1;
+                if (counter >= GREEN_BLINK_TIME) begin
+                    state <= YELLOW_after_GREEN;
+                    counter <= 0;
+                end
+            end
+            YELLOW_after_GREEN: begin
+                red <= 0;
+                green <= 0;
+                yellow <= 1;
+                pedestrian_red <= 1;
+                pedestrian_green <= 0;
+                counter <= counter + 1;
+                if (counter >= YELLOW_TIME) begin
+                    state <= RED;
+                    counter <= 0;
+                end
+            end
+        endcase
+    end
+end
+
+endmodule
+
