@@ -1,0 +1,23 @@
+module MorseEncoder (
+    input wire clk, 
+    input wire [3:0] digit, 
+    output reg [3:0] morse_code 
+);
+
+always @(posedge clk) begin
+    case(digit)
+        4'b0000: morse_code <= 4'b0000; // 0 - -----
+        4'b0001: morse_code <= 4'b1000; // 1 - .----
+        4'b0010: morse_code <= 4'b1100; // 2 - ..---
+        4'b0011: morse_code <= 4'b1110; // 3 - ...--
+        4'b0100: morse_code <= 4'b1111; // 4 - ....-
+        4'b0101: morse_code <= 4'b1111; // 5 - .....
+        4'b0110: morse_code <= 4'b0111; // 6 - -....
+        4'b0111: morse_code <= 4'b0011; // 7 - --...
+        4'b1000: morse_code <= 4'b0001; // 8 - ---..
+        4'b1001: morse_code <= 4'b0000; // 9 - ----.
+        default: morse_code <= 4'b1111; 
+endcase
+
+end
+endmodule
