@@ -1,0 +1,107 @@
+module MorseCodeEncoder (
+    input wire clk,
+    input wire rst,
+    input wire [3:0] text_char,
+    input wire load,
+    input wire [4:0] dash_length,
+    input wire [4:0] dot_length,
+    input wire [4:0] bit_pause_length,
+    output reg morse_code,
+    output reg done
+);
+
+    reg [8:0] current_code;
+    reg [5:0] counter;
+    reg [2:0] counter_time;
+    reg [2:0] symbol_pause_time;
+    reg one_bit;
+    reg [1:0] state;
+    reg transmitting;
+    reg [8:0] morse_codes [9:0];
+
+    initial begin
+        morse_codes[0] = 5'b11111; // 0 -> -----
+        morse_codes[1] = 5'b11110; // 1 -> .----
+        morse_codes[2] = 5'b11100; // 2 -> ..---
+        morse_codes[3] = 5'b11000; // 3 -> ...--
+        morse_codes[4] = 5'b10000; // 4 -> ....-
+        morse_codes[5] = 5'b00000; // 5 -> .....
+        morse_codes[6] = 5'b00001; // 6 -> -....
+        morse_codes[7] = 5'b00011; // 7 -> --...
+        morse_codes[8] = 5'b00111; // 8 -> ---..
+        morse_codes[9] = 5'b01111; // 9 -> ----.
+    end
+
+    always @(posedge clk or negedge rst) begin
+        if (~rst) begin
+            morse_code <= 1'b0;
+            counter <= 0;
+            counter_time <= 0;
+            symbol_pause_time <= 0;
+            state <= 0;
+            done <= 1;
+            transmitting <= 0;
+        end else begin
+            if (load && !transmitting) begin
+                if (text_char >= 0 && text_char <= 9)
+                    current_code <= morse_codes[text_char];
+                counter <= 0;
+                counter_time <= 0;
+                symbol_pause_time <= 0;
+                state <= 0;
+                done <= 0;
+                transmitting <= 1;
+            end else if (load && transmitting) begin
+                case (state)
+                    0: begin
+                        if (counter < 5) begin
+                            one_bit <= current_code[counter];
+                            if (one_bit == 1) begin
+                                if (counter_time < dash_length) begin
+                                    morse_code <= 1;
+                                    counter_time <= counter_time + 1;
+                                end else begin
+                                    counter_time <= 0;
+                                    state <= 1;
+                                end
+                            end else begin
+                                if (counter_time < dot_length) begin
+                                    morse_code <= 1;
+                                    counter_time <= counter_time + 1;
+                                end else begin
+                                    counter_time <= 0;
+                                    state <= 1;
+                                end
+                            end
+                        end else begin
+                            state <= 2;
+                            symbol_pause_time <= 0;
+                        end
+                    end
+                    1: begin
+                        morse_code <= 0;
+                        if (counter_time < bit_pause_length) begin
+                            counter_time <= counter_time + 1;
+                        end else begin
+                            counter_time <= 0;
+                            state <= 0;
+                            counter <= counter + 1;
+                        end
+                    end
+                    2: begin
+                        morse_code <= 0;
+                        if (symbol_pause_time < 3) begin
+                            symbol_pause_time <= symbol_pause_time + 1;
+                        end else begin
+                            symbol_pause_time <= 0;
+                            state <= 0;
+                            counter <= 0;
+                            done <= 1;
+                            transmitting <= 0;
+                        end
+                    end
+                endcase
+            end
+        end
+    end
+endmodule
