@@ -1,0 +1,12 @@
+INCA_libs/
+xcelium.d/
+*.log
+*.wdb
+.simvision/
+work/
+transcript
+db/
+incremental_db/
+*.qws
+*.ppf
+*.ddb
